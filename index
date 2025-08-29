@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulaire Intervention</title>
+  <link rel="stylesheet" href="style.css"> <!-- si tu as déjà un style global -->
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f8; }
+    header {
+      display: flex; align-items: center;
+      background: #1976d2; color: white;
+      padding: 1rem;
+      font-size: 1.2rem;
+    }
+    header .menu-btn {
+      margin-right: 1rem; cursor: pointer; font-size: 1.5rem;
+    }
+    .container {
+      max-width: 800px; margin: 2rem auto; padding: 2rem;
+      background: white; border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, select, textarea {
+      width: 100%; padding: 10px; margin-top: 5px;
+      border: 1px solid #ccc; border-radius: 8px;
+    }
+    button {
+      margin-top: 20px; padding: 12px 24px;
+      background: #1976d2; color: white; border: none; border-radius: 8px;
+      font-size: 1rem; cursor: pointer; transition: 0.3s;
+    }
+    button:hover { background: #0d47a1; }
+    #status { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="menu-btn">☰</div>
+  <div>Formulaire Intervention</div>
+</header>
+
+<!-- Menu navigation caché -->
+<nav id="menu" style="display:none; position:absolute; top:60px; left:10px; background:white; border:1px solid #ccc; border-radius:8px; padding:10px;">
+  <a href="index.html">🏠 Accueil</a><br>
+  <a href="tableau.html">📊 Tableau de bord</a><br>
+  <a href="historique.html">📜 Historique</a><br>
+  <a href="preventif.html">⏳ Préventif</a><br>
+  <a href="formulaire.html">🛠️ Formulaire</a>
+</nav>
+
+<div class="container">
+  <h2>🛠️ Nouvelle Intervention</h2>
+  <form id="pointageForm">
+    <label>Date :</label>
+    <input type="date" name="date" required>
+
+    <label>Machine :</label>
+    <select name="machine" id="machineSelect"></select>
+
+    <label>Technicien :</label>
+    <input type="text" name="technicien">
+
+    <label>Observations :</label>
+    <textarea name="observations"></textarea>
+
+    <button type="submit">✅ Envoyer</button>
+  </form>
+
+  <p id="status"></p>
+</div>
+
+<script>
+const GOOGLE_APPS_SCRIPT_URL = "TON_URL_DEPLOIEMENT_EXEC"; // ⚠️ Mets ici ton /exec
+
+// Toggle menu ☰
+document.querySelector(".menu-btn").addEventListener("click", () => {
+  const menu = document.getElementById("menu");
+  menu.style.display = menu.style.display === "none" ? "block" : "none";
+});
+
+// Charger la liste des machines
+async function loadMachines() {
+  try {
+    const res = await fetch(GOOGLE_APPS_SCRIPT_URL);
+    const json = await res.json();
+    if (json.success && json.data.machines) {
+      const select = document.getElementById("machineSelect");
+      json.data.machines.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = m;
+        select.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error("Erreur chargement machines", err);
+  }
+}
+loadMachines();
+
+// Gestion de l'envoi
+document.getElementById("pointageForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = Object.fromEntries(new FormData(e.target).entries());
+
+  try {
+    const res = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "addPointage",
+        data: formData
+      })
+    });
+    const json = await res.json();
+    document.getElementById("status").textContent = json.success ? "✅ Intervention enregistrée" : "❌ Erreur : " + json.error;
+  } catch (err) {
+    document.getElementById("status").textContent = "⚠️ Échec de l’envoi";
+    console.error(err);
+  }
+});
+</script>
+
+</body>
+</html>
